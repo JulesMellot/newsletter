@@ -644,115 +644,109 @@ function generateNewsletterHTML() {
 function generateFullHTMLDocument(contentElement) {
     const contentHTML = contentElement.outerHTML;
     
-    const css = `
-    body {
-        font-family: 'Helvetica Neue', Arial, sans-serif;
-        line-height: 1.6;
-        color: #333;
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-    
-    .newsletter-container {
-        background-color: #ffffff;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-    
-    .newsletter-header {
-        background-color: #0F172A;
-        color: #fff;
-        padding: 20px;
-        text-align: center;
-    }
-    
-    .newsletter-title {
-        font-size: 28px;
-        margin: 0 0 10px;
-    }
-    
-    .newsletter-date {
-        font-size: 14px;
-        color: #cbd5e1;
-    }
-    
-    .newsletter-intro {
-        padding: 20px;
-        font-size: 16px;
-        border-bottom: 1px solid #e2e8f0;
-    }
-    
-    .newsletter-section {
-        padding: 20px;
-        border-bottom: 1px solid #e2e8f0;
-    }
-    
-    .newsletter-section:last-child {
-        border-bottom: none;
-    }
-    
-    .section-title {
-        font-size: 22px;
-        margin: 0 0 15px;
-        color: #0F172A;
-    }
-    
-    .section-content {
-        font-size: 16px;
-    }
-    
-    .media-items-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 20px;
-    }
-    
-    .media-item {
-        display: flex;
-        border: 1px solid #e2e8f0;
-        border-radius: 4px;
-        overflow: hidden;
-    }
-    
-    .media-image {
-        width: 100px;
-        height: 150px;
-        object-fit: cover;
-    }
-    
-    .media-details {
-        padding: 10px;
-        flex-grow: 1;
-    }
-    
-    .media-title {
-        font-weight: bold;
-        font-size: 16px;
-        margin-bottom: 5px;
-    }
-    
-    .media-year {
-        color: #64748b;
-        font-size: 14px;
-        margin-bottom: 8px;
-    }
-    
-    .media-description {
-        font-size: 14px;
-        color: #334155;
-    }`;
-    
-    return `<!DOCTYPE html>
-<html lang="fr">
+    return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>${newsletterData.title || 'Newsletter Plex'}</title>
-    <style>${css}</style>
 </head>
-<body>
-${contentHTML}
+<body style="margin: 0; padding: 0; background-color: #F8F9FA;">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#F8F9FA">
+        <tr>
+            <td align="center" style="padding: 20px;">
+                <!-- Container Principal -->
+                <table width="800" border="0" cellspacing="0" cellpadding="0" style="background-color: #FFFFFF; color: #495057; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 60px 20px; text-align: center; background: linear-gradient(135deg, #845EF7, #748FFC); border-radius: 15px 15px 0 0;">
+                            <h1 style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 42px; color: #FFFFFF; letter-spacing: 4px; text-transform: uppercase; font-weight: 600; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">${newsletterData.title}</h1>
+                            <p style="margin-top: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 18px; color: #FFFFFF; font-weight: 200;">${formatDate(new Date())}</p>
+                        </td>
+                    </tr>
+
+                    ${newsletterData.introduction ? `
+                    <!-- Introduction -->
+                    <tr>
+                        <td style="padding: 30px;">
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background: linear-gradient(45deg, #F3F0FF, #E5DBFF); border: none; border-radius: 10px; box-shadow: 0 4px 15px rgba(116, 143, 252, 0.2);">
+                                <tr>
+                                    <td style="padding: 30px;">
+                                        <p style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 16px; color: #495057; line-height: 1.6;">${newsletterData.introduction}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    ` : ''}
+
+                    ${newsletterData.sections.map(section => `
+                    <!-- Section ${section.title} -->
+                    <tr>
+                        <td style="padding: 30px;">
+                            <h2 style="margin: 0 0 30px 0; font-family: 'Bricolage Grotesque', Arial, sans-serif; font-size: 28px; color: #748FFC; text-align: center; border-bottom: 2px solid #E9ECEF; padding-bottom: 15px; font-weight: 600;">
+                                ${section.type === 'movies' ? '🎬' : section.type === 'tvshows' ? '📺' : section.type === 'music' ? '🎵' : '📝'} ${section.title}
+                            </h2>
+                            ${section.type === 'text' ? `
+                            <p style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 16px; color: #495057; line-height: 1.6;">${section.content || ''}</p>
+                            ` : `
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                ${section.items.reduce((rows, item, index) => {
+                                    if (index % 2 === 0) {
+                                        rows.push([item]);
+                                    } else {
+                                        rows[rows.length - 1].push(item);
+                                    }
+                                    return rows;
+                                }, []).map(row => `
+                                <tr>
+                                    ${row.map(item => `
+                                    <td width="50%" style="padding: 10px;">
+                                        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F8F9FA; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                            <tr>
+                                                <td style="padding: 15px;">
+                                                    <div style="position: relative; overflow: hidden; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1);">
+                                                        <div style="position: relative; padding-top: 150%;">
+                                                            <img src="${item.image || 'assets/img/placeholder.jpg'}" 
+                                                                 alt="${item.title}" 
+                                                                 style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: block;" />
+                                                        </div>
+                                                        <div style="padding: 20px; background: linear-gradient(to bottom, #FFFFFF, #F8F9FA);">
+                                                            <h3 style="margin: 0 0 15px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 18px; color: #748FFC; font-weight: 600;">
+                                                                ${section.type === 'movies' ? '🎥' : section.type === 'tvshows' ? '📺' : '🎵'} ${item.title}
+                                                            </h3>
+                                                            ${item.year ? `<p style="margin: 0 0 8px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14px; color: #64748b;">(${item.year})</p>` : ''}
+                                                            ${item.description ? `<p style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14px; color: #495057; line-height: 1.6;">${item.description.length > 150 ? item.description.substring(0, 150) + '...' : item.description}</p>` : ''}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                    `).join('')}
+                                    ${row.length === 1 ? '<td width="50%" style="padding: 10px;"></td>' : ''}
+                                </tr>
+                                `).join('')}
+                            </table>
+                            `}
+                        </td>
+                    </tr>
+                    `).join('')}
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 40px 30px; text-align: center; background: linear-gradient(135deg, #748FFC, #845EF7); border-radius: 0 0 15px 15px;">
+                            <div style="margin: 0 auto; width: 200px; border-top: 2px solid rgba(255,255,255,0.3);"></div>
+                            <div style="padding: 20px 0; color: #FFFFFF; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                                &copy; ${new Date().getFullYear()} Newsletter Plex
+                            </div>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>`;
 }

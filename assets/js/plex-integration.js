@@ -3,256 +3,253 @@
  * Ce script facilite l'obtention des données depuis Plex
  */
 
-// Configuration pour l'intégration avec Plex
+// Configuration Plex
 const plexConfig = {
     enabled: false,
     serverUrl: '',
     token: '',
-    // Sauvegarde de la configuration dans le stockage local
-    save: function() {
-        localStorage.setItem('plex_config', JSON.stringify({
+    
+    // Sauvegarder la configuration
+    save() {
+        localStorage.setItem('plex-config', JSON.stringify({
             enabled: this.enabled,
             serverUrl: this.serverUrl,
             token: this.token
         }));
     },
-    // Chargement de la configuration depuis le stockage local
-    load: function() {
-        const saved = localStorage.getItem('plex_config');
+    
+    // Charger la configuration
+    load() {
+        const saved = localStorage.getItem('plex-config');
         if (saved) {
-            try {
-                const config = JSON.parse(saved);
-                this.enabled = config.enabled;
-                this.serverUrl = config.serverUrl;
-                this.token = config.token;
-                return true;
-            } catch (e) {
-                console.error('Erreur lors du chargement de la configuration Plex:', e);
-                return false;
-            }
+            const config = JSON.parse(saved);
+            this.enabled = config.enabled;
+            this.serverUrl = config.serverUrl;
+            this.token = config.token;
         }
-        return false;
     }
 };
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', () => {
-    // Charge la configuration Plex
+    // Charger la configuration
     plexConfig.load();
     
-    // Configure le bouton de configuration Plex
-    const plexConfigBtn = document.getElementById('plex-config-btn');
-    if (plexConfigBtn) {
-        plexConfigBtn.addEventListener('click', showPlexConfigModal);
+    // Configurer le bouton de configuration
+    const configBtn = document.getElementById('plex-config-btn');
+    if (configBtn) {
+        configBtn.addEventListener('click', showPlexConfigModal);
     }
     
-    // Configure l'extraction des données depuis Tautulli
-    setupTautulli();
+    // Configurer le bouton du script Tautulli
+    const scriptBtn = document.getElementById('show-tautulli-script-btn');
+    if (scriptBtn) {
+        scriptBtn.addEventListener('click', () => {
+            const modal = new bootstrap.Modal(document.getElementById('tautulli-script-modal'));
+            const scriptElement = document.getElementById('tautulli-script');
+            if (scriptElement) {
+                scriptElement.textContent = getTautulliScript();
+            }
+            modal.show();
+        });
+    }
 });
 
-// Affiche le modal de configuration Plex
+// Afficher le modal de configuration
 function showPlexConfigModal() {
     const modal = new bootstrap.Modal(document.getElementById('plex-config-modal'));
+    const form = document.getElementById('plex-config-form');
     
-    // Remplit le formulaire avec les valeurs actuelles
+    // Remplir le formulaire avec la configuration actuelle
     document.getElementById('plex-enabled').checked = plexConfig.enabled;
     document.getElementById('plex-server-url').value = plexConfig.serverUrl;
     document.getElementById('plex-token').value = plexConfig.token;
     
-    // Gestionnaire de soumission
-    document.getElementById('plex-config-form').onsubmit = (e) => {
-        e.preventDefault();
-        
-        // Met à jour la configuration
-        plexConfig.enabled = document.getElementById('plex-enabled').checked;
-        plexConfig.serverUrl = document.getElementById('plex-server-url').value.trim();
-        plexConfig.token = document.getElementById('plex-token').value.trim();
-        
-        // Sauvegarde la configuration
-        plexConfig.save();
-        
-        // Affiche un message de confirmation
-        alert('Configuration Plex sauvegardée.');
-        
-        modal.hide();
-    };
+    // Gérer la soumission du formulaire
+    if (form) {
+        form.onsubmit = (e) => {
+            e.preventDefault();
+            
+            plexConfig.enabled = document.getElementById('plex-enabled').checked;
+            plexConfig.serverUrl = document.getElementById('plex-server-url').value;
+            plexConfig.token = document.getElementById('plex-token').value;
+            
+            plexConfig.save();
+            modal.hide();
+            
+            showToast('Configuration Plex sauvegardée !');
+        };
+    }
     
     modal.show();
 }
 
-// Récupère les éléments récemment ajoutés depuis Plex
-async function getRecentlyAdded(mediaType, count = 10) {
+// Récupérer les éléments récemment ajoutés
+async function getRecentlyAdded() {
     if (!plexConfig.enabled || !plexConfig.serverUrl || !plexConfig.token) {
-        console.error('Configuration Plex incomplète');
-        return [];
+        throw new Error('Configuration Plex incomplète');
     }
-    
-    const librarySection = mediaType === 'movies' ? '1' : mediaType === 'tvshows' ? '2' : '8';
     
     try {
-        const url = `${plexConfig.serverUrl}/library/sections/${librarySection}/recentlyAdded?X-Plex-Token=${plexConfig.token}&limit=${count}`;
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-            throw new Error(`Erreur HTTP: ${response.status}`);
-        }
+        const response = await fetch(`${plexConfig.serverUrl}/library/recentlyAdded?X-Plex-Token=${plexConfig.token}`);
+        if (!response.ok) throw new Error('Erreur lors de la récupération des données');
         
         const data = await response.json();
-        return parseMediaItems(data, mediaType);
+        return parseMediaItems(data);
     } catch (error) {
-        console.error('Erreur lors de la récupération des éléments récents:', error);
-        return [];
+        console.error('Erreur Plex:', error);
+        throw error;
     }
 }
 
-// Analyse les données de médias renvoyées par Plex
-function parseMediaItems(data, mediaType) {
-    if (!data || !data.MediaContainer || !data.MediaContainer.Metadata) {
-        return [];
-    }
+// Parser les éléments média
+function parseMediaItems(data) {
+    const items = {
+        movie: [],
+        show: [],
+        album: []
+    };
     
-    return data.MediaContainer.Metadata.map(item => {
-        const baseItem = {
-            id: item.ratingKey,
-            title: item.title,
-            year: item.year,
-            description: item.summary,
-            type: mediaType
-        };
-        
-        // Ajoute l'URL de l'image si disponible
-        if (item.thumb) {
-            baseItem.image = `${plexConfig.serverUrl}${item.thumb}?X-Plex-Token=${plexConfig.token}`;
+    // Parser la réponse Plex
+    // À implémenter selon la structure de réponse de votre serveur Plex
+    
+    return items;
+}
+
+// Obtenir le script Tautulli
+function getTautulliScript() {
+    return `// Script d'intégration Tautulli pour le générateur de newsletter
+document.addEventListener('DOMContentLoaded', function() {
+    // Ajouter le style pour les éléments draggables
+    const style = document.createElement('style');
+    style.textContent = \`
+        .media-poster {
+            cursor: grab;
+            transition: transform 0.2s;
         }
+        .media-poster:hover {
+            transform: scale(1.05);
+        }
+        .media-poster.dragging {
+            opacity: 0.5;
+        }
+    \`;
+    document.head.appendChild(style);
+    
+    // Rendre les posters draggables
+    document.querySelectorAll('.media-poster').forEach(poster => {
+        poster.setAttribute('draggable', 'true');
         
-        return baseItem;
-    });
-}
-
-// Configure le script d'extraction de données depuis Tautulli
-function setupTautulli() {
-    // Ce script est destiné à être injecté dans Tautulli pour permettre
-    // le glisser-déposer des éléments médias vers notre générateur de newsletter
-    
-    // Le code suivant est un exemple de script que l'utilisateur pourrait ajouter
-    // à Tautulli via l'interface d'administration:
-    
-    const tautulliScript = `
-// Ajouter ce script à Tautulli via l'interface d'administration
-// pour pouvoir faire glisser-déposer des éléments médias vers votre générateur de newsletter
-
-// Sélecteur pour les éléments médias (à adapter selon votre thème Tautulli)
-const mediaItems = document.querySelectorAll('.media-tile');
-
-mediaItems.forEach(item => {
-    item.setAttribute('draggable', 'true');
-    
-    item.addEventListener('dragstart', e => {
-        // Récupère les données de l'élément
-        const mediaId = item.getAttribute('data-media-id');
-        const mediaType = item.getAttribute('data-media-type');
-        const title = item.querySelector('.media-title').textContent;
-        const year = item.querySelector('.media-year')?.textContent;
-        const posterUrl = item.querySelector('.media-poster img').src;
-        const summary = item.querySelector('.media-summary')?.textContent;
-        
-        // Crée un objet avec les données
-        const data = {
-            id: mediaId,
-            type: mediaType === 'movie' ? 'movies' : mediaType === 'show' ? 'tvshows' : 'music',
-            title: title,
-            year: year,
-            image: posterUrl,
-            description: summary
-        };
-        
-        // Définit les données à transférer
-        e.dataTransfer.setData('text/plain', JSON.stringify(data));
-    });
-});
-    `;
-    
-    // Affiche le script à l'utilisateur s'il clique sur un bouton dédié
-    const showTautulliScriptBtn = document.getElementById('show-tautulli-script-btn');
-    if (showTautulliScriptBtn) {
-        showTautulliScriptBtn.addEventListener('click', () => {
-            const modal = new bootstrap.Modal(document.getElementById('tautulli-script-modal'));
-            document.getElementById('tautulli-script').textContent = tautulliScript;
-            modal.show();
+        poster.addEventListener('dragstart', (e) => {
+            poster.classList.add('dragging');
+            
+            // Préparer les données pour le drag & drop
+            const mediaData = {
+                type: poster.dataset.type || 'movie',
+                title: poster.dataset.title || '',
+                year: poster.dataset.year || '',
+                image: poster.dataset.image || '',
+                description: poster.dataset.summary || ''
+            };
+            
+            e.dataTransfer.setData('text/plain', JSON.stringify(mediaData));
         });
-    }
+        
+        poster.addEventListener('dragend', () => {
+            poster.classList.remove('dragging');
+        });
+    });
+});`;
 }
 
-// Fonction pour récupérer des films populaires (simulée pour la démonstration)
+// Ajouter des données de démo
+function addDemoData(sectionId, type) {
+    const demoItems = type === 'movies' ? getDemoMovies() :
+                     type === 'tvshows' ? getDemoTVShows() :
+                     getDemoAlbums();
+    
+    demoItems.forEach(item => {
+        const event = new CustomEvent('drop', {
+            detail: { data: item }
+        });
+        
+        const container = document.getElementById(`media-container-${sectionId}`);
+        if (container) {
+            const data = new DataTransfer();
+            data.setData('text/plain', JSON.stringify(item));
+            
+            const dropEvent = new DragEvent('drop', {
+                dataTransfer: data,
+                bubbles: true,
+                cancelable: true
+            });
+            
+            container.dispatchEvent(dropEvent);
+        }
+    });
+}
+
+// Données de démo pour les films
 function getDemoMovies() {
     return [
         {
-            id: 'demo1',
-            type: 'movies',
+            type: 'movie',
             title: 'Inception',
             year: '2010',
             image: 'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg',
-            description: 'Dom Cobb est un voleur expérimenté, le meilleur dans l\'art dangereux de l\'extraction : sa spécialité consiste à s\'approprier les secrets les plus précieux, enfouis au plus profond du subconscient pendant une phase de rêve.'
+            description: 'Dom Cobb est un voleur expérimenté dans l\'art périlleux de l\'extraction : sa spécialité consiste à s\'approprier les secrets les plus précieux d\'un individu, enfouis au plus profond de son subconscient.'
         },
         {
-            id: 'demo2',
-            type: 'movies',
-            title: 'The Dark Knight',
-            year: '2008',
-            image: 'https://image.tmdb.org/t/p/w500/1hRoyzDtpgMU7Dz4JF22RANzQO7.jpg',
-            description: 'Batman entreprend de démanteler les organisations criminelles qui ravagent les rues de Gotham. Mais il se heurte bientôt à un nouveau génie du crime qui répand la terreur et le chaos : le Joker.'
-        },
-        {
-            id: 'demo3',
-            type: 'movies',
+            type: 'movie',
             title: 'Interstellar',
             year: '2014',
             image: 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
-            description: 'Le film raconte les aventures d\'un groupe d\'explorateurs qui utilisent une faille récemment découverte dans l\'espace-temps afin de repousser les limites humaines et partir à la conquête des distances astronomiques dans un voyage interstellaire.'
+            description: 'Dans un futur proche, la Terre est devenue hostile pour l\'homme. Les derniers habitants partent à la recherche d\'une nouvelle planète habitable.'
         }
     ];
 }
 
-// Fonction pour récupérer des séries TV populaires (simulée pour la démonstration)
+// Données de démo pour les séries
 function getDemoTVShows() {
     return [
         {
-            id: 'demo4',
-            type: 'tvshows',
-            title: 'Stranger Things',
-            year: '2016',
-            image: 'https://image.tmdb.org/t/p/w500/49WJfeN0moxb9IPfGn8AIqMGskD.jpg',
-            description: 'Quand un jeune garçon disparaît, une petite ville découvre une affaire mystérieuse, des expériences secrètes, des forces surnaturelles terrifiantes... et une fillette.'
-        },
-        {
-            id: 'demo5',
-            type: 'tvshows',
+            type: 'tvshow',
             title: 'Breaking Bad',
             year: '2008',
             image: 'https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg',
-            description: 'Walter White, professeur de chimie dans un lycée, apprend qu\'il est atteint d\'un cancer en phase terminale. Il décide alors de mettre en place un laboratoire et un réseau de production et de distribution de méthamphétamine.'
+            description: 'Un professeur de chimie atteint d\'un cancer s\'associe à un ancien élève pour fabriquer et vendre de la méthamphétamine.'
         },
         {
-            id: 'demo6',
-            type: 'tvshows',
-            title: 'Game of Thrones',
-            year: '2011',
-            image: 'https://image.tmdb.org/t/p/w500/u3bZgnGQ9T01sWNhyveQz0wH0Hl.jpg',
-            description: 'Sur le continent de Westeros, le roi Robert Baratheon gouverne le Royaume des Sept Couronnes depuis plus de dix-sept ans. Mais des complots se trament pour s\'emparer du trône.'
+            type: 'tvshow',
+            title: 'Stranger Things',
+            year: '2016',
+            image: 'https://image.tmdb.org/t/p/w500/49WJfeN0moxb9IPfGn8AIqMGskD.jpg',
+            description: 'Quand un jeune garçon disparaît, une petite ville découvre une affaire mystérieuse, des expériences secrètes et des forces surnaturelles.'
         }
     ];
 }
 
-// Fonction pour ajouter des données de démonstration à la newsletter
-function addDemoData(sectionId, mediaType) {
-    const demoData = mediaType === 'movies' ? getDemoMovies() : getDemoTVShows();
-    
-    demoData.forEach(media => {
-        addMediaItemFromDrop(sectionId, media);
-    });
+// Données de démo pour les albums
+function getDemoAlbums() {
+    return [
+        {
+            type: 'album',
+            title: 'Dark Side of the Moon',
+            year: '1973',
+            image: 'https://upload.wikimedia.org/wikipedia/en/3/3b/Dark_Side_of_the_Moon.png',
+            description: 'Album emblématique de Pink Floyd'
+        },
+        {
+            type: 'album',
+            title: 'Thriller',
+            year: '1982',
+            image: 'https://upload.wikimedia.org/wikipedia/en/5/55/Michael_Jackson_-_Thriller.png',
+            description: 'Album légendaire de Michael Jackson'
+        }
+    ];
 }
 
-// Exposer les fonctions nécessaires globalement
+// Exposer les fonctions nécessaires
 window.plexIntegration = {
     getRecentlyAdded,
     addDemoData
