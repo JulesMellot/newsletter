@@ -1,0 +1,120 @@
+/* Styles généraux */
+body {
+    background-color: #f8f9fa;
+}
+
+.min-height-300 {
+    min-height: 300px;
+}
+
+/* Styles pour les sections */
+.section-item {
+    margin-bottom: 15px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background-color: white;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 15px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.section-body {
+    padding: 15px;
+}
+
+.section-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.section-controls {
+    display: flex;
+    gap: 5px;
+}
+
+/* Styles pour les éléments média */
+.media-item {
+    display: flex;
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+.media-image {
+    width: 80px;
+    height: 120px;
+    object-fit: cover;
+    margin-right: 15px;
+    border-radius: 4px;
+    background-color: #e9ecef;
+}
+
+.media-details {
+    flex-grow: 1;
+}
+
+.media-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.media-year {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.media-description {
+    font-size: 0.9rem;
+}
+
+/* Styles pour l'état "drag-over" */
+.drag-over {
+    background-color: rgba(0, 123, 255, 0.1);
+    border: 2px dashed #007bff;
+}
+
+/* Style pour le mode sombre */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #343a40;
+        color: #f8f9fa;
+    }
+    
+    .card {
+        background-color: #495057;
+        color: #f8f9fa;
+    }
+    
+    .section-item {
+        background-color: #495057;
+        border-color: #6c757d;
+    }
+    
+    .section-header {
+        background-color: #343a40;
+        border-color: #6c757d;
+    }
+    
+    .form-control, .form-select {
+        background-color: #495057;
+        color: #f8f9fa;
+        border-color: #6c757d;
+    }
+    
+    .form-control::placeholder {
+        color: #adb5bd;
+    }
+    
+    .text-muted {
+        color: #adb5bd !important;
+    }
+} 

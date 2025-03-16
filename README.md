@@ -1,68 +1,71 @@
-# Plex Newsletter Manager
+# Plex Newsletter Generator
 
-Une application web moderne pour créer et envoyer des newsletters dynamiques basées sur le contenu de votre serveur Plex, en utilisant Tautulli pour l'envoi.
+Un générateur de newsletter simple pour les utilisateurs de Plex et Tautulli.
 
-## Fonctionnalités principales
+## 🚀 Fonctionnalités
 
-- Interface de création de newsletter avec drag & drop pour l'organisation des sections
-- Récupération automatique des nouveaux ajouts Plex via l'API Tautulli
-- Sections personnalisées manuelles
-- Prévisualisation en temps réel
-- Génération de templates HTML responsive
-- Envoi automatique via l'API Tautulli
-- Historique des newsletters envoyées
-- Mode sombre disponible
+- Créez des newsletters personnalisées avec un contenu Plex
+- Interface utilisateur intuitive pour l'édition et la prévisualisation
+- Support du glisser-déposer depuis Tautulli
+- Génération de fichiers HTML prêts à l'emploi
+- Fonctionne sans backend ni base de données
+- Compatible avec les appareils mobiles
 
-## Architecture
+## 📋 Prérequis
 
-- **Frontend**: Next.js (React)
-- **Backend**: FastAPI (Python)
-- **Base de données**: PostgreSQL
-- **Intégration**: APIs Tautulli et Plex
+- Un navigateur web moderne
+- Optionnel : Un serveur Plex et Tautulli pour l'intégration complète
 
-## Installation
+## 🛠️ Installation 
 
-### Prérequis
+1. Clonez ce dépôt sur votre machine locale ou téléchargez-le en tant qu'archive ZIP.
+2. Ouvrez le fichier `index.html` dans votre navigateur web.
 
-- Node.js 18+
-- Python 3.9+
-- PostgreSQL
-- Un serveur Plex et Tautulli configuré
+C'est tout ! L'application fonctionne directement dans votre navigateur sans nécessiter d'installation supplémentaire.
 
-### Installation du frontend
+## 📝 Utilisation
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+### Configuration de base
 
-### Installation du backend
+1. Ouvrez l'application dans votre navigateur
+2. Commencez par entrer un titre, un sujet et une introduction pour votre newsletter
+3. Ajoutez des sections pour organiser votre contenu
 
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # Sur Windows: venv\Scripts\activate
-pip install -r requirements.txt
-python main.py
-```
+### Ajouter du contenu
 
-### Variables d'environnement
+#### Sections de texte
+1. Sélectionnez "Texte" dans le menu déroulant des types de section
+2. Entrez un titre pour la section
+3. Cliquez sur "Ajouter une section"
+4. Écrivez votre contenu dans la zone de texte
 
-Créez un fichier `.env` dans le dossier backend:
+#### Sections de films/séries TV
+1. Sélectionnez "Films" ou "Séries TV" dans le menu déroulant
+2. Entrez un titre pour la section
+3. Cliquez sur "Ajouter une section"
+4. Utilisez le bouton "+" pour ajouter manuellement du contenu ou faites glisser-déposer depuis Tautulli
 
-```
-DATABASE_URL=postgresql://user:password@localhost/plexnewsletter
-TAUTULLI_URL=http://votre-serveur-tautulli:port
-TAUTULLI_API_KEY=votre-clé-api
-PLEX_URL=http://votre-serveur-plex:port
-PLEX_TOKEN=votre-token-plex
-```
+### Intégration avec Tautulli
 
-## Déploiement
+Pour permettre le glisser-déposer depuis Tautulli :
+1. Cliquez sur le bouton "Script Tautulli" pour afficher le code JavaScript à utiliser
+2. Copiez ce script
+3. Dans Tautulli, allez dans "Paramètres" > "Personnalisation d'interface"
+4. Collez le script dans la section "JavaScript personnalisé"
+5. Enregistrez les modifications
 
-L'application est configurée pour un déploiement automatique sur OVH via Git. Consultez le dossier `deployment` pour les instructions détaillées.
+Vous pourrez maintenant faire glisser des éléments depuis les vues de Tautulli directement vers l'application.
 
-## Licence
+### Prévisualisation et génération
 
-MIT 
+1. Utilisez le bouton "Prévisualiser" pour voir à quoi ressemblera votre newsletter
+2. Lorsque vous êtes satisfait, cliquez sur "Générer HTML" pour télécharger le fichier HTML final
+3. Ce fichier HTML peut être importé dans Tautulli ou envoyé directement par email
+
+## 🤝 Contribution
+
+Les contributions sont les bienvenues ! N'hésitez pas à soumettre des pull requests pour améliorer cette application.
+
+## 📄 Licence
+
+Ce projet est sous licence [MIT](LICENSE). 

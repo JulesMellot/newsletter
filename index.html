@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Newsletter Plex</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-envelope"></i> Plex Newsletter Generator
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">Détails de la newsletter</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="newsletter-form">
+                            <div class="mb-3">
+                                <label for="newsletter-title" class="form-label">Titre</label>
+                                <input type="text" class="form-control" id="newsletter-title" placeholder="Nouveautés de mars 2025" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="newsletter-subject" class="form-label">Sujet</label>
+                                <input type="text" class="form-control" id="newsletter-subject" placeholder="Découvrez les nouveaux contenus sur notre serveur" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="newsletter-intro" class="form-label">Introduction</label>
+                                <textarea class="form-control" id="newsletter-intro" rows="3" placeholder="Bonjour à tous, voici les nouveautés du mois..."></textarea>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title mb-0">Ajouter du contenu</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="section-type" class="form-label">Type de section</label>
+                            <select class="form-select" id="section-type">
+                                <option value="text">Texte</option>
+                                <option value="movies">Films</option>
+                                <option value="tvshows">Séries TV</option>
+                                <option value="music">Musique</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="section-title" class="form-label">Titre de la section</label>
+                            <input type="text" class="form-control" id="section-title" placeholder="Nouveaux films">
+                        </div>
+
+                        <div id="text-content" class="mb-3">
+                            <label for="section-text" class="form-label">Contenu</label>
+                            <textarea class="form-control" id="section-text" rows="3"></textarea>
+                        </div>
+
+                        <div id="media-content" class="mb-3 d-none">
+                            <div class="mb-3" id="media-items">
+                                <!-- Les éléments média seront ajoutés ici -->
+                            </div>
+                            
+                            <div class="media-item-template mb-3 border rounded p-2 d-none">
+                                <div class="mb-2">
+                                    <label class="form-label">Titre</label>
+                                    <input type="text" class="form-control media-title">
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label">Année</label>
+                                    <input type="number" class="form-control media-year" min="1900" max="2100">
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label">Description</label>
+                                    <textarea class="form-control media-description" rows="2"></textarea>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label">Image (URL ou fichier)</label>
+                                    <input type="file" class="form-control media-image" accept="image/*">
+                                </div>
+                                <button type="button" class="btn btn-sm btn-danger remove-media">Supprimer</button>
+                            </div>
+                            
+                            <button type="button" class="btn btn-sm btn-primary" id="add-media-item">
+                                <i class="bi bi-plus-circle"></i> Ajouter un élément
+                            </button>
+                        </div>
+
+                        <button type="button" class="btn btn-success" id="add-section">
+                            Ajouter cette section
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="card-title mb-0">Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-primary" id="preview-btn">
+                                <i class="bi bi-eye"></i> Prévisualiser
+                            </button>
+                            <button type="button" class="btn btn-success" id="generate-btn">
+                                <i class="bi bi-download"></i> Générer et télécharger
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Structure de la newsletter</h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-danger" id="clear-sections">
+                                <i class="bi bi-trash"></i> Tout effacer
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="sections-container" class="border rounded p-3 min-height-300">
+                            <div class="text-center text-muted py-5">
+                                <i class="bi bi-inbox display-1"></i>
+                                <p>Aucune section ajoutée pour le moment</p>
+                                <p>Utilisez le formulaire de gauche pour ajouter du contenu</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal de prévisualisation -->
+                <div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Prévisualisation de la newsletter</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <iframe id="preview-frame" style="width: 100%; height: 600px; border: none;"></iframe>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container text-center">
+            <p>&copy; 2025 Plex Newsletter Generator</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/main.js"></script>
+</body>
+</html> 
