@@ -69,3 +69,5 @@ Les contributions sont les bienvenues ! N'hésitez pas à soumettre des pull req
 ## 📄 Licence
 
 Ce projet est sous licence [MIT](LICENSE). 
+
+Jules Mellot 
