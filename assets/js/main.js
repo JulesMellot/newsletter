@@ -12,22 +12,58 @@ let mediaIdCounter = 0;
 
 // Initialisation de l'application
 document.addEventListener('DOMContentLoaded', () => {
-    // Écouteurs d'événements pour le formulaire principal
-    document.getElementById('newsletter-title').addEventListener('input', updateNewsletterTitle);
-    document.getElementById('newsletter-subject').addEventListener('input', updateNewsletterSubject);
-    document.getElementById('newsletter-intro').addEventListener('input', updateNewsletterIntro);
-    
-    // Écouteur pour le bouton d'ajout de section
-    document.getElementById('add-section').addEventListener('click', addNewSection);
-    
-    // Écouteurs pour les boutons d'actions
-    document.getElementById('preview-btn').addEventListener('click', previewNewsletter);
-    document.getElementById('generate-btn').addEventListener('click', generateNewsletter);
-    
-    // Initialiser les infobulles Bootstrap
-    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+    initializeFormListeners();
+    initializeActionButtons();
+    initializeTooltips();
+    setupEmptyState();
 });
+
+// Initialisation des écouteurs de formulaire
+function initializeFormListeners() {
+    // Formulaire principal
+    document.getElementById('newsletter-title')?.addEventListener('input', updateNewsletterTitle);
+    document.getElementById('newsletter-subject')?.addEventListener('input', updateNewsletterSubject);
+    document.getElementById('newsletter-intro')?.addEventListener('input', updateNewsletterIntro);
+    
+    // Bouton d'ajout de section
+    document.getElementById('add-section-btn')?.addEventListener('click', addNewSection);
+    
+    // Type de section
+    document.getElementById('section-type')?.addEventListener('change', updateSectionType);
+}
+
+// Initialisation des boutons d'action
+function initializeActionButtons() {
+    // Boutons principaux
+    document.getElementById('preview-btn')?.addEventListener('click', previewNewsletter);
+    document.getElementById('generate-btn')?.addEventListener('click', generateNewsletter);
+    document.getElementById('clear-sections')?.addEventListener('click', clearAllSections);
+    
+    // Bouton de copie du script Tautulli
+    document.getElementById('copy-script-btn')?.addEventListener('click', copyTautulliScript);
+}
+
+// Initialisation des tooltips Bootstrap
+function initializeTooltips() {
+    const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltips.forEach(tooltip => new bootstrap.Tooltip(tooltip));
+}
+
+// Configuration de l'état vide
+function setupEmptyState() {
+    const sectionsContainer = document.getElementById('sections-container');
+    const emptyState = document.getElementById('empty-state');
+    
+    if (sectionsContainer && emptyState) {
+        // Observer les changements dans le conteneur de sections
+        const observer = new MutationObserver(() => {
+            const hasContent = sectionsContainer.children.length > 1; // > 1 car emptyState compte comme un enfant
+            emptyState.style.display = hasContent ? 'none' : 'block';
+        });
+        
+        observer.observe(sectionsContainer, { childList: true });
+    }
+}
 
 // Mise à jour des données de la newsletter
 function updateNewsletterTitle(e) {
@@ -42,10 +78,22 @@ function updateNewsletterIntro(e) {
     newsletterData.introduction = e.target.value;
 }
 
+// Mise à jour du type de section
+function updateSectionType(e) {
+    const type = e.target.value;
+    const titleInput = document.getElementById('section-title');
+    
+    if (titleInput) {
+        titleInput.placeholder = type === 'text' ? 'Introduction' :
+            type === 'movies' ? 'Nouveaux films' :
+            type === 'tvshows' ? 'Nouvelles séries' : 'Nouveaux albums';
+    }
+}
+
 // Ajout d'une nouvelle section
 function addNewSection() {
-    const sectionType = document.getElementById('section-type').value;
-    const sectionTitle = document.getElementById('section-title').value || 'Nouvelle section';
+    const sectionType = document.getElementById('section-type')?.value || 'text';
+    const sectionTitle = document.getElementById('section-title')?.value || 'Nouvelle section';
     
     const sectionId = `section-${sectionIdCounter++}`;
     const section = {
@@ -59,10 +107,19 @@ function addNewSection() {
     
     // Créer et ajouter la section au DOM
     const sectionElement = createSectionElement(section);
-    document.getElementById('sections-container').appendChild(sectionElement);
+    const container = document.getElementById('sections-container');
+    if (container) {
+        container.appendChild(sectionElement);
+    }
     
     // Réinitialiser le champ de titre
-    document.getElementById('section-title').value = '';
+    const titleInput = document.getElementById('section-title');
+    if (titleInput) {
+        titleInput.value = '';
+    }
+    
+    // Afficher un message de confirmation
+    showToast('Section ajoutée avec succès !');
 }
 
 // Création d'un élément de section dans le DOM
@@ -125,6 +182,18 @@ function createSectionElement(section) {
         infoMsg.className = 'text-muted small mt-2';
         infoMsg.innerHTML = `<i class="bi bi-info-circle"></i> Vous pouvez ajouter du contenu ${section.type === 'movies' ? 'de films' : section.type === 'tvshows' ? 'de séries TV' : 'musical'} manuellement ou glisser-déposer depuis Plex.`;
         bodyDiv.appendChild(infoMsg);
+        
+        // Bouton de démo
+        const demoBtn = document.createElement('button');
+        demoBtn.type = 'button';
+        demoBtn.className = 'btn btn-sm btn-outline-secondary mt-2';
+        demoBtn.innerHTML = '<i class="bi bi-play-fill"></i> Ajouter des exemples';
+        demoBtn.addEventListener('click', () => {
+            if (window.plexIntegration) {
+                window.plexIntegration.addDemoData(section.id, section.type);
+            }
+        });
+        bodyDiv.appendChild(demoBtn);
     }
     
     sectionDiv.append(headerDiv, bodyDiv);
@@ -162,14 +231,13 @@ function setupDragAndDrop(container, sectionId) {
         container.classList.remove('drag-over');
         
         try {
-            // Essayer de récupérer les données
             const data = JSON.parse(e.dataTransfer.getData('text/plain'));
             if (data && data.type && data.title) {
                 addMediaItemFromDrop(sectionId, data);
             }
         } catch (error) {
             console.error('Erreur lors du traitement des données déposées:', error);
-            alert('Le format des données déposées n\'est pas valide. Assurez-vous de glisser-déposer depuis Plex.');
+            showToast('Format de données invalide. Assurez-vous de glisser-déposer depuis Plex.', 'error');
         }
     });
 }
@@ -192,43 +260,51 @@ function addMediaItemFromDrop(sectionId, data) {
     
     // Ajouter l'élément au DOM
     const mediaElement = createMediaElement(mediaItem, sectionId);
-    document.getElementById(`media-container-${sectionId}`).appendChild(mediaElement);
+    const container = document.getElementById(`media-container-${sectionId}`);
+    if (container) {
+        container.appendChild(mediaElement);
+        showToast('Média ajouté avec succès !');
+    }
 }
 
 // Ajouter un nouvel élément média manuellement
 function addMediaItem(sectionId, sectionType) {
-    // Créer un dialogue modal pour saisir les informations
     const modal = new bootstrap.Modal(document.getElementById('media-modal'));
+    const modalTitle = document.getElementById('media-modal-title');
+    const form = document.getElementById('media-form');
     
-    // Configurer le modal pour le type de contenu
-    document.getElementById('modal-title').textContent = `Ajouter un ${sectionType === 'movies' ? 'film' : sectionType === 'tvshows' ? 'une série TV' : 'album musical'}`;
+    if (modalTitle) {
+        modalTitle.textContent = `Ajouter un ${sectionType === 'movies' ? 'film' : sectionType === 'tvshows' ? 'une série TV' : 'album musical'}`;
+    }
     
-    // Réinitialiser le formulaire
-    document.getElementById('media-form').reset();
-    
-    // Configurer le gestionnaire de soumission
-    document.getElementById('media-form').onsubmit = (e) => {
-        e.preventDefault();
-        
-        const mediaItem = {
-            id: `media-${mediaIdCounter++}`,
-            title: document.getElementById('media-title').value,
-            year: document.getElementById('media-year').value,
-            image: document.getElementById('media-image').value,
-            description: document.getElementById('media-description').value
-        };
-        
-        const sectionIndex = newsletterData.sections.findIndex(s => s.id === sectionId);
-        if (sectionIndex !== -1) {
-            newsletterData.sections[sectionIndex].items.push(mediaItem);
+    if (form) {
+        form.reset();
+        form.onsubmit = (e) => {
+            e.preventDefault();
             
-            // Ajouter l'élément au DOM
-            const mediaElement = createMediaElement(mediaItem, sectionId);
-            document.getElementById(`media-container-${sectionId}`).appendChild(mediaElement);
-        }
-        
-        modal.hide();
-    };
+            const mediaItem = {
+                id: `media-${mediaIdCounter++}`,
+                title: document.getElementById('media-title')?.value || '',
+                year: document.getElementById('media-year')?.value || '',
+                image: document.getElementById('media-image')?.value || '',
+                description: document.getElementById('media-description')?.value || ''
+            };
+            
+            const sectionIndex = newsletterData.sections.findIndex(s => s.id === sectionId);
+            if (sectionIndex !== -1) {
+                newsletterData.sections[sectionIndex].items.push(mediaItem);
+                
+                const mediaElement = createMediaElement(mediaItem, sectionId);
+                const container = document.getElementById(`media-container-${sectionId}`);
+                if (container) {
+                    container.appendChild(mediaElement);
+                    showToast('Média ajouté avec succès !');
+                }
+            }
+            
+            modal.hide();
+        };
+    }
     
     modal.show();
 }
@@ -270,7 +346,6 @@ function createMediaElement(media, sectionId) {
     const editBtn = createButton('btn-sm btn-outline-secondary', 'Éditer', 'pencil');
     const deleteBtn = createButton('btn-sm btn-outline-danger', 'Supprimer', 'trash');
     
-    // Ajouter les événements
     editBtn.addEventListener('click', () => editMediaItem(media.id, sectionId));
     deleteBtn.addEventListener('click', () => deleteMediaItem(media.id, sectionId));
     
@@ -288,31 +363,29 @@ function editSection(sectionId) {
     const section = newsletterData.sections[sectionIndex];
     const newTitle = prompt('Modifier le titre de la section:', section.title);
     
-    if (newTitle !== null) {
-        // Mettre à jour les données
+    if (newTitle !== null && newTitle.trim() !== '') {
         newsletterData.sections[sectionIndex].title = newTitle;
         
-        // Mettre à jour le DOM
         const titleElement = document.querySelector(`#${sectionId} .section-title`);
         if (titleElement) {
             titleElement.textContent = newTitle;
+            showToast('Section modifiée avec succès !');
         }
     }
 }
 
 // Supprimer une section
 function deleteSection(sectionId) {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette section?')) {
-        // Supprimer des données
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette section ?')) {
         const sectionIndex = newsletterData.sections.findIndex(s => s.id === sectionId);
         if (sectionIndex !== -1) {
             newsletterData.sections.splice(sectionIndex, 1);
         }
         
-        // Supprimer du DOM
         const sectionElement = document.getElementById(sectionId);
         if (sectionElement) {
             sectionElement.remove();
+            showToast('Section supprimée avec succès !');
         }
     }
 }
@@ -326,63 +399,66 @@ function editMediaItem(mediaId, sectionId) {
     if (mediaIndex === -1) return;
     
     const media = newsletterData.sections[sectionIndex].items[mediaIndex];
-    
-    // Créer un dialogue modal pour éditer les informations
     const modal = new bootstrap.Modal(document.getElementById('media-modal'));
+    const modalTitle = document.getElementById('media-modal-title');
+    const form = document.getElementById('media-form');
     
-    // Configurer le modal
-    document.getElementById('modal-title').textContent = `Éditer ${media.title}`;
+    if (modalTitle) {
+        modalTitle.textContent = `Éditer ${media.title}`;
+    }
     
-    // Remplir le formulaire
-    document.getElementById('media-title').value = media.title;
-    document.getElementById('media-year').value = media.year || '';
-    document.getElementById('media-image').value = media.image || '';
-    document.getElementById('media-description').value = media.description || '';
-    
-    // Configurer le gestionnaire de soumission
-    document.getElementById('media-form').onsubmit = (e) => {
-        e.preventDefault();
+    if (form) {
+        // Remplir le formulaire
+        document.getElementById('media-title').value = media.title;
+        document.getElementById('media-year').value = media.year || '';
+        document.getElementById('media-image').value = media.image || '';
+        document.getElementById('media-description').value = media.description || '';
         
-        // Mettre à jour les données
-        media.title = document.getElementById('media-title').value;
-        media.year = document.getElementById('media-year').value;
-        media.image = document.getElementById('media-image').value;
-        media.description = document.getElementById('media-description').value;
-        
-        // Mettre à jour le DOM
-        const mediaElement = document.getElementById(mediaId);
-        if (mediaElement) {
-            const imgElement = mediaElement.querySelector('.media-image');
-            if (imgElement) {
-                imgElement.src = media.image || 'assets/img/placeholder.jpg';
+        form.onsubmit = (e) => {
+            e.preventDefault();
+            
+            // Mettre à jour les données
+            media.title = document.getElementById('media-title').value;
+            media.year = document.getElementById('media-year').value;
+            media.image = document.getElementById('media-image').value;
+            media.description = document.getElementById('media-description').value;
+            
+            // Mettre à jour le DOM
+            const mediaElement = document.getElementById(mediaId);
+            if (mediaElement) {
+                const imgElement = mediaElement.querySelector('.media-image');
+                if (imgElement) {
+                    imgElement.src = media.image || 'assets/img/placeholder.jpg';
+                }
+                
+                const titleElement = mediaElement.querySelector('.media-title');
+                if (titleElement) {
+                    titleElement.textContent = media.title;
+                }
+                
+                const yearElement = mediaElement.querySelector('.media-year');
+                if (yearElement) {
+                    yearElement.textContent = media.year ? `(${media.year})` : '';
+                }
+                
+                const descElement = mediaElement.querySelector('.media-description');
+                if (descElement) {
+                    descElement.textContent = media.description;
+                }
+                
+                showToast('Média modifié avec succès !');
             }
             
-            const titleElement = mediaElement.querySelector('.media-title');
-            if (titleElement) {
-                titleElement.textContent = media.title;
-            }
-            
-            const yearElement = mediaElement.querySelector('.media-year');
-            if (yearElement) {
-                yearElement.textContent = media.year ? `(${media.year})` : '';
-            }
-            
-            const descElement = mediaElement.querySelector('.media-description');
-            if (descElement) {
-                descElement.textContent = media.description;
-            }
-        }
-        
-        modal.hide();
-    };
+            modal.hide();
+        };
+    }
     
     modal.show();
 }
 
 // Supprimer un élément média
 function deleteMediaItem(mediaId, sectionId) {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cet élément?')) {
-        // Supprimer des données
+    if (confirm('Êtes-vous sûr de vouloir supprimer cet élément ?')) {
         const sectionIndex = newsletterData.sections.findIndex(s => s.id === sectionId);
         if (sectionIndex !== -1) {
             const mediaIndex = newsletterData.sections[sectionIndex].items.findIndex(m => m.id === mediaId);
@@ -391,45 +467,68 @@ function deleteMediaItem(mediaId, sectionId) {
             }
         }
         
-        // Supprimer du DOM
         const mediaElement = document.getElementById(mediaId);
         if (mediaElement) {
             mediaElement.remove();
+            showToast('Média supprimé avec succès !');
         }
+    }
+}
+
+// Effacer toutes les sections
+function clearAllSections() {
+    if (confirm('Êtes-vous sûr de vouloir supprimer toutes les sections ?')) {
+        newsletterData.sections = [];
+        const container = document.getElementById('sections-container');
+        if (container) {
+            const emptyState = document.getElementById('empty-state');
+            container.innerHTML = '';
+            if (emptyState) {
+                container.appendChild(emptyState);
+            }
+            showToast('Toutes les sections ont été supprimées !');
+        }
+    }
+}
+
+// Copier le script Tautulli
+function copyTautulliScript() {
+    const scriptElement = document.getElementById('tautulli-script');
+    if (scriptElement) {
+        navigator.clipboard.writeText(scriptElement.textContent)
+            .then(() => showToast('Script copié dans le presse-papiers !'))
+            .catch(() => showToast('Erreur lors de la copie du script.', 'error'));
     }
 }
 
 // Prévisualiser la newsletter
 function previewNewsletter() {
-    // Vérification des données minimales
     if (!newsletterData.title) {
-        alert('Veuillez au moins entrer un titre pour votre newsletter.');
+        showToast('Veuillez au moins entrer un titre pour votre newsletter.', 'error');
         return;
     }
     
-    const previewModal = new bootstrap.Modal(document.getElementById('preview-modal'));
-    const previewContainer = document.getElementById('preview-content');
+    const modal = new bootstrap.Modal(document.getElementById('preview-modal'));
+    const container = document.getElementById('preview-content');
     
-    // Générer le HTML de prévisualisation
-    previewContainer.innerHTML = '';
-    previewContainer.appendChild(generateNewsletterHTML());
+    if (container) {
+        container.innerHTML = '';
+        container.appendChild(generateNewsletterHTML());
+    }
     
-    previewModal.show();
+    modal.show();
 }
 
 // Générer et télécharger la newsletter
 function generateNewsletter() {
-    // Vérification des données minimales
     if (!newsletterData.title) {
-        alert('Veuillez au moins entrer un titre pour votre newsletter.');
+        showToast('Veuillez au moins entrer un titre pour votre newsletter.', 'error');
         return;
     }
     
-    // Générer le HTML complet
     const newsletterHTML = generateNewsletterHTML();
     const fullHTML = generateFullHTMLDocument(newsletterHTML);
     
-    // Créer un Blob et le télécharger
     const blob = new Blob([fullHTML], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     
@@ -439,11 +538,12 @@ function generateNewsletter() {
     document.body.appendChild(a);
     a.click();
     
-    // Nettoyer
     setTimeout(() => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }, 0);
+    
+    showToast('Newsletter générée avec succès !');
 }
 
 // Générer le HTML de la newsletter
@@ -542,10 +642,8 @@ function generateNewsletterHTML() {
 
 // Générer le document HTML complet
 function generateFullHTMLDocument(contentElement) {
-    // Convertir l'élément DOM en chaîne
     const contentHTML = contentElement.outerHTML;
     
-    // CSS intégré pour le rendu dans les clients de messagerie
     const css = `
     body {
         font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -645,16 +743,13 @@ function generateFullHTMLDocument(contentElement) {
         color: #334155;
     }`;
     
-    // Template HTML complet
     return `<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${newsletterData.title || 'Newsletter Plex'}</title>
-    <style>
-${css}
-    </style>
+    <style>${css}</style>
 </head>
 <body>
 ${contentHTML}
@@ -668,8 +763,45 @@ function formatDate(date) {
     return date.toLocaleDateString('fr-FR', options);
 }
 
-// Gestionnaire de glisser-déposer pour l'importation de données
-// Note: Cette fonction sera utilisée pour l'intégration avec Plex
-function handlePlexDragDrop() {
-    // À implémenter pour l'intégration avec Plex
+// Afficher un toast de notification
+function showToast(message, type = 'success') {
+    const toastContainer = document.getElementById('toast-container') || createToastContainer();
+    
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+    bsToast.show();
+    
+    // Nettoyer le toast après qu'il soit caché
+    toast.addEventListener('hidden.bs.toast', () => {
+        toast.remove();
+        if (toastContainer.children.length === 0) {
+            toastContainer.remove();
+        }
+    });
+}
+
+// Créer le conteneur de toasts
+function createToastContainer() {
+    const container = document.createElement('div');
+    container.id = 'toast-container';
+    container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+    container.style.zIndex = '1050';
+    document.body.appendChild(container);
+    return container;
 } 
