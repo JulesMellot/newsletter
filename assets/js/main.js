@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('newsletter-intro').addEventListener('input', updateNewsletterIntro);
     
     // Écouteur pour le bouton d'ajout de section
-    document.getElementById('add-section-btn').addEventListener('click', addNewSection);
+    document.getElementById('add-section').addEventListener('click', addNewSection);
     
     // Écouteurs pour les boutons d'actions
     document.getElementById('preview-btn').addEventListener('click', previewNewsletter);
