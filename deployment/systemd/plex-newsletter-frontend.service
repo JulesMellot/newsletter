@@ -1,0 +1,18 @@
+[Unit]
+Description=Plex Newsletter Frontend Service
+After=network.target
+
+[Service]
+User=user
+Group=user
+WorkingDirectory=/home/user/plex-newsletter/frontend
+Environment="NODE_ENV=production"
+Environment="PORT=3000"
+Environment="NEXT_PUBLIC_API_URL=https://newsletter.votredomaine.com/api/v1"
+ExecStart=/usr/bin/npm start
+Restart=on-failure
+RestartSec=5
+SyslogIdentifier=plex-newsletter-frontend
+
+[Install]
+WantedBy=multi-user.target 

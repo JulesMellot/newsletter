@@ -1,0 +1,16 @@
+[Unit]
+Description=Plex Newsletter Backend Service
+After=network.target postgresql.service
+
+[Service]
+User=user
+Group=user
+WorkingDirectory=/home/user/plex-newsletter/backend
+Environment="PATH=/home/user/plex-newsletter/backend/venv/bin"
+ExecStart=/home/user/plex-newsletter/backend/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
+Restart=on-failure
+RestartSec=5
+SyslogIdentifier=plex-newsletter-backend
+
+[Install]
+WantedBy=multi-user.target 
